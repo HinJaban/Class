@@ -11,11 +11,18 @@ public:
     /*pixel &copy(pixel)const {
         return
     } */
-
+    pixel()
+    {
+    }
     pixel(int CordX, int CordY, float MassaM, char *ColorC) : x(CordX), y(CordY), m(MassaM), color(ColorC)
     {
         color = new char[strlen(ColorC) + 1];
     }
+    pixel(const pixel &m) {
+
+    }
+    pixel(char*);
+    pixel(float*);
     ~pixel()
     {
         delete[] color;
@@ -64,12 +71,21 @@ public:
     }
     void InputObj(int CordX, int CordY, float MassaM, char *ColorC);
 
-    pixel::pixel()
+    /*pixel::pixel()
     {
         x = 1;
         y = 1;
         m = 1.1;
         color = "black";
+    }*/
+   pixel summa(pixel b) {
+    
+   }
+   pixel *there_I_am(){
+        return this;
+    }
+    pixel &copy(const pixel&m){
+        
     }
 };
 
@@ -85,9 +101,12 @@ int main()
 {
     setlocale(LC_ALL, "ru_RU.UTF-8");
     pixel p;
-    p.InputObj(5, 6, 3.5, "blue");
+    //pixel p(5,6,3.5,"blue");
+   p.InputObj(5, 6, 3.5, "blue");
     p.PrintObj();
-     pixel p2;
-    p2=pixel();
-    p2.PrintObj();
+    pixel p2(p);
+    //p.~pixel();
+     
+
+    
 }
