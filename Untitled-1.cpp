@@ -1,4 +1,20 @@
 #include <iostream>
+#include <string>
+enum State
+{
+    
+    Gruz_Ne_Zahvachen, // S0
+    Gruz_Zahvachen, // S1
+    Gruz_Podnyat,   // S2. Если масса груза выше грузоподъемности,
+    // то переход в состояние Груз_Упал (Груз_Захвачен->Груз_Поднят->Груз_Упал,
+    // если масса груза меньше или равна грузоподъемности, то Груз_Захвачен->Груз_Поднят
+    // когда состояние Груз_Поднят можно установить новую массу груза
+    Gruz_Opuschen // S3. может быть переход Груз_Поднят->Груз_Опущен->Груз_Не_Захвачен
+    
+     // S4, Если состояние Груз_Упал, Масса груза уменьшается на определенное число в
+    // в зависимости оттого, на какой высоте z упал груз, масса которого превышает грузоподъемность
+};
+State st=Gruz_Ne_Zahvachen;
 class pixel
 {
 private:
@@ -74,6 +90,7 @@ public:
 
     void PrintObj() const
     {
+        setlocale(LC_ALL, "ru_RU.UTF-8");
         std::cout << "Координата X - " << GetX() << std::endl;
         std::cout << "Координата Y - " << GetY() << std::endl;
         std::cout << "Вес точки - " << GetMassa() << std::endl;
@@ -131,16 +148,19 @@ private:
     float MassaBox;      // масса груза
     float MaxMassa;      // грузоподъемность
     char *TypeLatm;
+    int height;
 
 public:
+
     Latm()
     {
     }
-    Latm(char *TypeLatmT, float MaxMassaM, int CordX, int CordY, float MassaBoxM, int CordX1, int CordY1) : MaxMassa(MaxMassaM), x(CordX), y(CordY), z(0), MassaBox(MassaBoxM)
+    Latm(char *TypeLatmT, float MaxMassaM, int heightH, int CordX, int CordY, float MassaBoxM, int CordX1, int CordY1) : MaxMassa(MaxMassaM), x(CordX), y(CordY), z(0), MassaBox(MassaBoxM), height(heightH)
     {
+        
         TypeLatm = new char[strlen(TypeLatmT) + 1];
         strcpy(TypeLatm, TypeLatmT);
-        st = Груз_Не_Захвачен;
+        st = Gruz_Ne_Zahvachen; 
     }
     Latm(const Latm &a);
     ~Latm()
@@ -177,11 +197,25 @@ public:
         // в состоянии Груз_Не_Захвачен
         y1 = CordY;
     }
+    void LatmTravel(int x2, int y2){
+        if(st==Gruz_Podnyat || st==Gruz_Zahvachen || st==Gruz_Opuschen) {
+            x=x2, y=y2;
+            x1=x2, y1=y2;
+        }
+        else {
+x=x2, y=y2;
+        }
+    }
     void LatmToBox()
     {
+        if(x==x1 && y==y1) {
+        std::cout<<"ПТМ уже впритык к грузу"<<std::endl;
+        }
+        else {
         x = x1;
         y = y1;
-        st = ПТМ_Впритык_К_Коробке;
+        }
+
     }
     int GetX() const
     {
@@ -215,13 +249,28 @@ public:
     {
         return x1;
     }
+    int GetHeight() const
+    {
+        return height;
+    }
+string Sostoyanie(State stS) {
+    switch(stS) {
+        case 0: return "Груз не захвачен"; break;
+  case 1: return "Груз захвачен";break;
+  case 2: return "Груз поднят"; break;
+  case 3: return "Груз опущен"; break;
+    }
 
+}
     void InfoLatm() const
     {
+        
         std::cout << "Подъемно-транспортная машина : " << GetTypeLatm() << std::endl;
         std::cout << "Грузоподъемность - " << GetMaxMassa() << std::endl;
         std::cout << "Координата X - " << GetX() << std::endl;
         std::cout << "Координата Y - " << GetY() << std::endl;
+        std::cout << "Максимальная высота подъема груза - " << GetHeight() << std::endl;
+        std::cout << "текущее состояние  - " << Sostoyanie(st) << std::endl;
         // if(состояние = Груз_Захвачен) {
         // std::cout << "Вес груза - " << GetMassa() << std::endl;
         // }
@@ -231,6 +280,7 @@ public:
     }
     void InfoBox() const
     {
+        
         std::cout << "Масса груза - " << GetMassaBox() << std::endl;
         std::cout << "Координата x груза - " << GetX1() << std::endl;
         std::cout << "Координата y груза - " << GetY1() << std::endl;
@@ -239,9 +289,9 @@ public:
 
     void TakeBox()
     {
-        if (st == Груз_Не_Захвачен)
+        if (st == Gruz_Ne_Zahvachen)
         {
-            st = Груз_Захвачен;
+            st = Gruz_Zahvachen;
         }
         else
         {
@@ -249,34 +299,40 @@ public:
             return;
         }
     }
-    void UpBox(int height)
+    void UpBox(int heightH)
     {
+        if(heightH<=height) {
         if (MaxMassa >= MassaBox)
         {
-            st = Груз_Поднят;
-            SetZ(height);
+            st = Gruz_Podnyat;
+            SetZ(heightH);
         }
         else
         {
-            st = Груз_Упал;
+            st = Gruz_Ne_Zahvachen; //груз упал часть рассыпалась
             SetZ(0);
             MassaBox = MassaBox - MassaBox / 10;
+        }
+        }else {
+            heightH=height;
+            UpBox(heightH);
         }
     }
     void DownBox()
     {
-        st = Груз_Опущен;
+        st = Gruz_Opuschen; 
         SetZ(0);
     }
     void PutBox()
     {
-        st = Груз_Выложен;
-        st = Груз_Не_Захвачен;
+        
+        st = Gruz_Ne_Zahvachen; 
     }
     void AddMassaBox(float AddMassaBoxB)
     {
+        setlocale(LC_ALL, "ru_RU.UTF-8");
         float reg = MassaBox;
-        if (st == Груз_Не_Захвачен)
+        if (st == Gruz_Ne_Zahvachen)
         {
             MassaBox += AddMassaBoxB;
             std::cout << "Масса груза величилась с " << reg << " до " << MassaBox << std::endl;
@@ -288,8 +344,9 @@ public:
     }
     void CutMassaBox(float CutMassaBoxB)
     {
+        setlocale(LC_ALL, "ru_RU.UTF-8");
         float reg = MassaBox;
-        if (st == Груз_Не_Захвачен)
+        if (st == Gruz_Ne_Zahvachen)
         {
             if (MassaBox > CutMassaBoxB)
             {
@@ -321,24 +378,12 @@ x7
 // enum Message{
 // y1,y2,y3,y4,y5,y6,y7
 // };
-enum State
-{
-    Груз_Не_Захвачен, // S0
-    ПТМ_Впритык_К_Коробке,
-    Груз_Захвачен, // S1
-    Груз_Поднят,   // S2. Если масса груза выше грузоподъемности,
-    // то переход в состояние Груз_Упал (Груз_Захвачен->Груз_Поднят->Груз_Упал,
-    // если масса груза меньше или равна грузоподъемности, то Груз_Захвачен->Груз_Поднят
-    // когда состояние Груз_Поднят можно установить новую массу груза
-    Груз_Опущен, // S3. может быть переход Груз_Поднят->Груз_Опущен->Груз_Не_Захвачен
-    Груз_Выложен,
-    Груз_Упал, // S4, Если состояние Груз_Упал, Масса груза уменьшается на определенное число в
-    // в зависимости оттого, на какой высоте z упал груз, масса которого превышает грузоподъемность
-};
+
 
 void Latm::SetMassaBox(float MassaBoxM)
 {
-    if (st == Груз_Не_Захвачен)
+    setlocale(LC_ALL, "ru_RU.UTF-8");
+    if (st == Gruz_Ne_Zahvachen)
     {
         MassaBox = MassaBoxM;
     }
@@ -348,15 +393,25 @@ void Latm::SetMassaBox(float MassaBoxM)
         return;
     }
 }
-State st;
+
 
 int main()
 {
     setlocale(LC_ALL, "ru_RU.UTF-8");
     // Latm PTM; //Заметен след конструктора по умолчанию
-    Latm PTM("Loader", 200.5, 0, 0, 150.49, 5, 3); // инициализация конструктором с 7-ю параметрами
-    PTM.LatmToBox()
-        PTM.TakeBox();
+    Latm PTM("Loader", 200.5, 4, 0, 0, 150.49, 5, 3); // инициализация конструктором с 7-ю параметрами
+    PTM.InfoLatm();
+    PTM.LatmToBox();
+    PTM.TakeBox();
+    PTM.UpBox(2);
+    PTM.LatmTravel(5, 4);
+    PTM.InfoBox();
+    PTM.DownBox();
+    PTM.PutBox();
+    PTM.AddMassaBox(5.5);
+    PTM.CutMassaBox(3.0);
+    PTM.LatmTravel(9,9);
+    PTM.InfoLatm();
 
     /*
 std::cout<<"1-определение объекта с помощью конструктора по умолчанию"<<std::endl;
